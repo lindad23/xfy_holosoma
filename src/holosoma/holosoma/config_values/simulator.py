@@ -68,8 +68,8 @@ mujoco = SimulatorConfig(
             substeps=1,
             physx=PhysxConfig(
                 solver_type=1,
-                num_position_iterations=4,
-                num_velocity_iterations=0,
+                num_position_iterations=8,
+                num_velocity_iterations=4,
                 bounce_threshold_velocity=0.5,
             ),
             render_mode="fake",
@@ -94,8 +94,8 @@ mjwarp = SimulatorConfig(
             substeps=1,
             physx=PhysxConfig(
                 solver_type=1,
-                num_position_iterations=4,
-                num_velocity_iterations=0,
+                num_position_iterations=8,
+                num_velocity_iterations=4,
                 bounce_threshold_velocity=0.5,
             ),
             render_mode="fake",

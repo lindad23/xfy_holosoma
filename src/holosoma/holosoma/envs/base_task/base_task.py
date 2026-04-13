@@ -103,6 +103,7 @@ class BaseTask:
         self.simulator: BaseSimulator = SimulatorClass(
             tyro_config=full_sim_config, terrain_manager=self.terrain_manager, device=device
         )
+        self.simulator.task = self
 
         self.headless = self.training_config.headless
         self.simulator.set_headless(self.headless)
@@ -361,6 +362,10 @@ class BaseTask:
         if terrain_state is None or not hasattr(terrain_state, "env_origins"):
             raise RuntimeError("Terrain manager state 'locomotion_terrain' must provide env_origins.")
         return terrain_state.env_origins
+
+    def get_video_overlay_text(self, env_id: int) -> str | None:
+        """Return optional task-specific text for training video overlays."""
+        return None
 
     # ------------------------------------------------------------------
     # Reset hooks

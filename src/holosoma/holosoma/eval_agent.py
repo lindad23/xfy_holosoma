@@ -71,13 +71,23 @@ def run_eval_with_tyro(
         algo.export(onnx_file_path=exported_onnx_path)  # type: ignore[attr-defined]
         logger.info(f"Exported policy as onnx to: {exported_onnx_path}")
 
-    algo.evaluate_policy(
-        max_eval_steps=tyro_config.training.max_eval_steps,
-    )
+    try:
+        algo.evaluate_policy(
+            max_eval_steps=tyro_config.training.max_eval_steps,
+        )
+    finally:
+        simulator = getattr(env, "simulator", None)
+        video_recorder = getattr(simulator, "video_recorder", None)
+        if video_recorder is not None:
+            frame_count = video_recorder._get_frame_count()
+            logger.info(f"Finalizing eval video recorder with {frame_count} buffered frames")
+            video_recorder.cleanup()
 
-    # Cleanup simulation app
-    if simulation_app:
-        close_simulation_app(simulation_app)
+        if hasattr(env, "close"):
+            env.close()
+
+        if simulation_app:
+            close_simulation_app(simulation_app)
 
 
 def main() -> None:

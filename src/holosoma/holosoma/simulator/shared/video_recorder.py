@@ -499,7 +499,12 @@ class VideoRecorderInterface(ABC):
             return image_rgb
 
         record_env_id = self.config.record_env_id
-        command_text = format_command_labels(getattr(self.simulator, "commands", None), env_id=record_env_id)
+        command_text = None
+        task = getattr(self.simulator, "task", None)
+        if task is not None and hasattr(task, "get_video_overlay_text"):
+            command_text = task.get_video_overlay_text(record_env_id)
+        if command_text is None:
+            command_text = format_command_labels(getattr(self.simulator, "commands", None), env_id=record_env_id)
         return overlay_text_on_image(image_rgb.copy(), command_text, position=(50, 50), font_scale=0.8)
 
     # ===== Impl Functions (can be overridden) =====

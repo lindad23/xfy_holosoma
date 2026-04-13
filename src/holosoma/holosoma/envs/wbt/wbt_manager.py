@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 import torch
 
@@ -64,6 +65,27 @@ class WholeBodyTrackingManager(BaseTask):
         if tracker is None:
             raise RuntimeError("AverageEpisodeLengthTracker is not registered with the curriculum manager.")
         return tracker
+
+    def get_video_overlay_text(self, env_id: int) -> str | None:
+        motion_command = self.command_manager.get_state("motion_command")
+        if motion_command is None:
+            return None
+
+        current_step = int(motion_command.time_steps[env_id].item())
+        total_steps = int(motion_command.motion.time_step_total)
+        progress = 100.0 * current_step / max(total_steps - 1, 1)
+        motion_name = Path(motion_command.motion_cfg.motion_file).name
+        ref_lin_vel = motion_command.ref_lin_vel_w[env_id]
+        ref_speed = torch.norm(ref_lin_vel[:2]).item()
+        ref_yaw_rate = motion_command.ref_ang_vel_w[env_id, 2].item()
+        ref_height = motion_command.ref_pos_w[env_id, 2].item()
+        ref_error = torch.norm(motion_command.ref_pos_w[env_id] - motion_command.robot_ref_pos_w[env_id]).item()
+
+        return (
+            f"mode=WBT, motion={motion_name}, step={current_step}/{total_steps - 1}, "
+            f"progress={progress:.1f}%, ref_speed={ref_speed:.2f}, ref_yaw={ref_yaw_rate:.2f}, "
+            f"ref_z={ref_height:.2f}, ref_err={ref_error:.2f}"
+        )
 
     # -------------------------------- terms same with locomotion_manager.py [end]--------------------------------
 

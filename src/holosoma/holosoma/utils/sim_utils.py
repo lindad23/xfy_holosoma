@@ -463,6 +463,9 @@ class DirectSimulation:
         step_count = 0
         start_time = time.time()
         fps_start_time = start_time
+        max_runtime_seconds = self.config.max_runtime_seconds
+        if max_runtime_seconds is not None:
+            logger.info(f"Max runtime: {max_runtime_seconds:.2f} seconds")
 
         while True:
             try:
@@ -472,8 +475,8 @@ class DirectSimulation:
                 # Direct simulator step - this triggers bridge.step() inside simulate_at_each_physics_step()
                 self.simulator.simulate_at_each_physics_step()
 
-                # Update viewer at display rate
-                if step_count % viewer_steps == 0:
+                # Update viewer only when a viewer exists.
+                if not self.config.training.headless and step_count % viewer_steps == 0:
                     self.simulator.render()
 
                 # Periodic FPS logging (every 1000 steps)
@@ -481,6 +484,11 @@ class DirectSimulation:
                     fps_start_time = self._log_fps(step_count, fps_start_time)
 
                 step_count += 1
+
+                if max_runtime_seconds is not None and (time.time() - start_time) >= max_runtime_seconds:
+                    logger.info(f"Reached max runtime ({max_runtime_seconds:.2f}s); stopping simulation")
+                    break
+
                 rate_limiter.sleep()
 
             except KeyboardInterrupt:  # noqa: PERF203

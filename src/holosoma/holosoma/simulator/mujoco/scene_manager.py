@@ -49,9 +49,12 @@ class MujocoSceneManager:
         simulator_config : SimulatorConfig
             Simulator configuration containing physics parameters.
         """
-        # TODO: expose to Mujoco-specific config
+        # Map the shared solver preset onto the closest MuJoCo world options so the
+        # default MuJoCo backend does not run with a much looser solve than IsaacSim.
         self.world_spec.option.gravity = [0, 0, -9.81]
         self.world_spec.option.timestep = 1.0 / simulator_config.sim.fps  # type: ignore[attr-defined]
+        self.world_spec.option.iterations = simulator_config.sim.physx.num_position_iterations  # type: ignore[attr-defined]
+        self.world_spec.option.ls_iterations = max(1, simulator_config.sim.physx.num_velocity_iterations)  # type: ignore[attr-defined]
 
     def add_materials(self) -> None:
         """Add standard materials and textures to the world specification.
@@ -186,7 +189,8 @@ class MujocoSceneManager:
         mujoco.MjSpec.Geom
             Ground plane geometry with configured physics properties.
         """
-        # Create ground plane with hardcoded parameters and physics properties
+        # Use contact parameters closer to the IsaacSim defaults. The previous plane
+        # was both lower-friction and much stiffer, which amplified WBT sim2sim drift.
         return self.world_spec.worldbody.add_geom(
             name=terrain_state.name,
             type=mujoco.mjtGeom.mjGEOM_PLANE,
@@ -197,13 +201,12 @@ class MujocoSceneManager:
             pos=[0, 0, 0],
             material="grid",
             friction=[
-                # Ignore terrain config until we expose Mujoco-specific parameters
-                0.7,  # reasonable default
-                0.005,  # reasonable default
-                0.001,  # reasonable default
+                1.0,
+                0.005,
+                0.001,
             ],  # [sliding, torsional, rolling]
-            solimp=[0.99, 0.99, 0.01, 0.5, 2],  # 5 elements: [dmin, dmax, width, midpoint, power]
-            solref=[0.001, 1],  # 2 elements: [timeconst, dampratio]
+            solimp=[0.9, 0.95, 0.001, 0.5, 2],  # 5 elements: [dmin, dmax, width, midpoint, power]
+            solref=[0.01, 1],  # 2 elements: [timeconst, dampratio]
         )
 
     def _create_trimesh(self, terrain_state: TerrainTermBase) -> mujoco.MjSpec.Geom:

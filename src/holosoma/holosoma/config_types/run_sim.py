@@ -78,6 +78,13 @@ class RunSimConfig:
     Only used by run_sim.py for real-time display synchronization.
     """
 
+    max_runtime_seconds: float | None = None
+    """Optional wall-clock runtime limit for direct simulation.
+
+    When set, run_sim.py exits naturally after this many seconds so cleanup runs
+    and any active video recorder can finalize its output.
+    """
+
     device: str | None = "cpu"
     """Device to use for simulation. None auto-detects based on the simulator type.
     """
